@@ -1,6 +1,7 @@
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from model import MindMapModel
 
 import os
 import sys
@@ -69,7 +70,8 @@ class MainWindow(QMainWindow):
         self.addToolBar(file_toolbar)
         file_menu = self.menuBar().addMenu("&File")
 
-        open_file_action = QAction(QIcon(os.path.join('images', 'blue-folder-open-document.png')), "Open file...", self)
+        open_file_action = QAction(QIcon(os.path.join('images', 'blue-folder-open-document.png')),
+                                   "Open file...", self)
         open_file_action.setStatusTip("Open file")
         open_file_action.triggered.connect(self.file_open)
         file_menu.addAction(open_file_action)
@@ -86,7 +88,8 @@ class MainWindow(QMainWindow):
         self.addToolBar(edit_toolbar)
         edit_menu = self.menuBar().addMenu("&Edit")
 
-        undo_action = QAction(QIcon(os.path.join('images', 'arrow-curve-180-left.png')), "Undo", self)
+        undo_action = QAction(QIcon(os.path.join('images', 'arrow-curve-180-left.png')), "Undo",
+                              self)
         undo_action.setStatusTip("Undo last change")
         # undo_action.triggered.connect(self.editor.undo)
         edit_toolbar.addAction(undo_action)
@@ -112,7 +115,8 @@ class MainWindow(QMainWindow):
         edit_toolbar.addAction(copy_action)
         edit_menu.addAction(copy_action)
 
-        paste_action = QAction(QIcon(os.path.join('images', 'clipboard-paste-document-text.png')), "Paste", self)
+        paste_action = QAction(QIcon(os.path.join('images', 'clipboard-paste-document-text.png')),
+                               "Paste", self)
         paste_action.setStatusTip("Paste from clipboard")
         # paste_action.triggered.connect(self.editor.paste)
         edit_toolbar.addAction(paste_action)
@@ -165,28 +169,44 @@ class MainWindow(QMainWindow):
         self.show()
 
         # Just for demo
-        root = MapItem(0, 0, 'Computer <Root, ID:0>')
-        self.scene.addItem(root)
-
-        node = MapItem(300, 0, 'OS <Node, ID:1>', selected=True)
-        self.scene.addItem(node)
-        line1 = QGraphicsLineItem(50, 50, 350, 50)
-        self.scene.addItem(line1)
-
-        node2 = MapItem(300, 150, 'Network <Node, ID:2>')
-        self.scene.addItem(node2)
-        line2 = QGraphicsLineItem(200, 50, 300, 200)
-        self.scene.addItem(line2)
-
-        node3 = MapItem(600, 0, 'MacOS <Node, ID:3>')
-        line3 = QGraphicsLineItem(350, 50, 600, 50)
-        self.scene.addItem(node3)
-        self.scene.addItem(line3)
+        # root = MapItem(0, 0, 'Computer <Root, ID:0>')
+        # self.scene.addItem(root)
+        #
+        # node = MapItem(300, 0, 'OS <Node, ID:1>', selected=True)
+        # self.scene.addItem(node)
+        # line1 = QGraphicsLineItem(50, 50, 350, 50)
+        # self.scene.addItem(line1)
+        #
+        # node2 = MapItem(300, 150, 'Network <Node, ID:2>')
+        # self.scene.addItem(node2)
+        # line2 = QGraphicsLineItem(200, 50, 300, 200)
+        # self.scene.addItem(line2)
+        #
+        # node3 = MapItem(600, 0, 'MacOS <Node, ID:3>')
+        # line3 = QGraphicsLineItem(350, 50, 600, 50)
+        # self.scene.addItem(node3)
+        # self.scene.addItem(line3)
         ###
 
     def insert_node_dialog(self):
-        node_desc, okPressed = QInputDialog.getText(self, "Edit a node", "New node description:", QLineEdit.Normal, "")
-        print(node_desc)
+        mind_map = MindMapModel()
+        if mind_map.root is None:
+            root_desc, okPressed = QInputDialog.getText(self, "Insert a node", "Root description:",
+                                                        QLineEdit.Normal, "")
+            mind_map.create_mind_map(root_desc)
+            print(root_desc)
+            self.drawItem(mind_map.root)
+        else:
+            node_id, okPressed = QInputDialog.getText(self, "Insert a node", "Node ID:",
+                                                      QLineEdit.Normal, "")
+            print(node_id)
+            node_desc, okPressed = QInputDialog.getText(self, "Insert a node", "Node description:",
+                                                        QLineEdit.Normal, "")
+            print(node_desc)
+
+            node = mind_map.create_node(node_desc)
+            mind_map.insert_node(int(node_id), node)
+            self.drawItem(node)
 
     def dialog_critical(self, s):
         dlg = QMessageBox(self)
@@ -225,7 +245,23 @@ class MainWindow(QMainWindow):
             self.update_title()
 
     def update_title(self):
-        self.setWindowTitle("%s - GogoMind" % (os.path.basename(self.path) if self.path else "Untitled"))
+        self.setWindowTitle(
+            "%s - GogoMind" % (os.path.basename(self.path) if self.path else "Untitled"))
+
+    def drawItem(self, node):
+        if node.id == 0:
+            node.set_position(0, 0)
+            node = MapItem(0, 0, node.description + ' <Root, ID:0>')
+            self.scene.addItem(node)
+        else:
+            parent = node.parent
+            new_x = parent.x + 300
+            new_y = (len(parent.children) - 1) * 150
+            print('children len:' + str(len(node.children)))
+            node.set_position(new_x, new_y)
+            paint_node = MapItem(new_x, new_y,
+                                 node.description + ' <Node, ID:' + str(node.id) + '>')
+            self.scene.addItem(paint_node)
 
 
 if __name__ == '__main__':
