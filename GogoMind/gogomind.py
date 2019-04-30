@@ -165,6 +165,8 @@ class MainWindow(QMainWindow):
         node_toolbar.addAction(child_action)
         node_menu.addAction(child_action)
 
+        self.mind_map = MindMapModel()
+
         self.update_title()
         self.show()
 
@@ -189,13 +191,13 @@ class MainWindow(QMainWindow):
         ###
 
     def insert_node_dialog(self):
-        mind_map = MindMapModel()
-        if mind_map.root is None:
+        # mind_map = MindMapModel()
+        if self.mind_map.root is None:
             root_desc, okPressed = QInputDialog.getText(self, "Insert a node", "Root description:",
                                                         QLineEdit.Normal, "")
-            mind_map.create_mind_map(root_desc)
+            self.mind_map.create_mind_map(root_desc)
             print(root_desc)
-            self.drawItem(mind_map.root)
+            self.drawItem(self.mind_map.root)
         else:
             node_id, okPressed = QInputDialog.getText(self, "Insert a node", "Node ID:",
                                                       QLineEdit.Normal, "")
@@ -204,8 +206,8 @@ class MainWindow(QMainWindow):
                                                         QLineEdit.Normal, "")
             print(node_desc)
 
-            node = mind_map.create_node(node_desc)
-            mind_map.insert_node(int(node_id), node)
+            node = self.mind_map.create_node(node_desc)
+            self.mind_map.insert_node(int(node_id), node)
             self.drawItem(node)
 
     def dialog_critical(self, s):
@@ -218,9 +220,14 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, "Open file", "", "*.ggm")
 
         try:
-            with open(path, 'rU') as f:
-                text = f.read()
+            with open(path, 'r') as f:
+                for line in enumerate(f):
+                    print("line: ", line)
+                    nodeId = line[0]
+                    data = line[1].split( )
+                    print("data: ", data)
 
+                # text = f.read()
         except Exception as e:
             self.dialog_critical(str(e))
 
@@ -230,8 +237,12 @@ class MainWindow(QMainWindow):
 
     def file_save(self):
         if self.path is None:
+            # data = self.mind_map.traversal(self.mind_map.root)
+            # print("traversal: ", data)
             # If we do not have a path, we need to use Save As.
             return self.file_saveas()
+        else:
+            self.mind_map.save_file(self.path)
 
     def file_saveas(self):
         path, _ = QFileDialog.getSaveFileName(self, "Save file", "", "GogoMind documents (*.ggm);")
@@ -241,6 +252,7 @@ class MainWindow(QMainWindow):
             return
 
         else:
+            self.mind_map.save_file(path)
             self.path = path
             self.update_title()
 
